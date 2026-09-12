@@ -1,7 +1,7 @@
 {
-  "name": "quantumlab-backend",
+  "name": "quantiva-backend",
   "version": "1.0.0",
-  "description": "QuantumLab Express API server",
+  "description": "Quantiva Express API server",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
