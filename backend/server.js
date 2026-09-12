@@ -162,7 +162,7 @@ async function startServer() {
   await connectDB();
   await initRedis();
 
-  app.listen(PORT, () => {
+  app.listen(PORT,"0.0.0.0", () => {
     console.log(`\n  🚀 Quantiva API running at http://localhost:${PORT}`);
     console.log(`  🔒 Security: Helmet, Rate Limiting, Mongo Sanitize enabled`);
     console.log(`  🌐 CORS Origins: ${allowedOrigins.join(", ")}`);
