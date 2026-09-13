@@ -399,6 +399,7 @@ export default function AITutorPanel() {
           {/* Messages Viewport */}
           <div
             ref={scrollRef}
+            data-lenis-prevent="true"
             className="flex-1 overflow-y-auto p-4 space-y-3"
             style={{
               scrollBehavior: "smooth",

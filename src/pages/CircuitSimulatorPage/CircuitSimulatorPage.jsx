@@ -10,26 +10,98 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import Button from "../../components/Button/Button";
 import { useAITutor } from "../../context/AITutorContext";
-import { exportCircuitToQasm, importCircuitFromQasm, runCircuitTimeline } from "../../services/api";
+import {
+  exportCircuitToQasm,
+  importCircuitFromQasm,
+  runCircuitTimeline,
+} from "../../services/api";
 import StateProbabilityHeatmap from "../../components/StateProbabilityHeatmap/StateProbabilityHeatmap";
 import QuantumTimeMachinePanel from "../../components/QuantumTimeMachine/QuantumTimeMachinePanel";
-import { getCircuitLayers, flattenCircuitByLayer } from "../../utils/circuitLayers";
-
+import ImageLightbox from "../../components/ImageLightbox/ImageLightbox";
+import {
+  getCircuitLayers,
+  flattenCircuitByLayer,
+} from "../../utils/circuitLayers";
 
 const GATES = [
-  { type: "I", label: "I (Spacer)", short: "I", color: "bg-gray-500/20 text-gray-400 border-gray-500 border-dashed" },
-  { type: "H", label: "H", short: "H", color: "bg-blue-500/20 text-blue-400 border-blue-500" },
-  { type: "X", label: "X", short: "X", color: "bg-red-500/20 text-red-400 border-red-500" },
-  { type: "Y", label: "Y", short: "Y", color: "bg-green-500/20 text-green-400 border-green-500" },
-  { type: "Z", label: "Z", short: "Z", color: "bg-purple-500/20 text-purple-400 border-purple-500" },
-  { type: "S", label: "S", short: "S", color: "bg-yellow-500/20 text-yellow-400 border-yellow-500" },
-  { type: "T", label: "T", short: "T", color: "bg-orange-500/20 text-orange-400 border-orange-500" },
-  { type: "SX", label: "√X", short: "√X", color: "bg-red-400/20 text-red-300 border-red-400" },
-  { type: "SDG", label: "S†", short: "S†", color: "bg-yellow-400/20 text-yellow-300 border-yellow-400" },
-  { type: "TDG", label: "T†", short: "T†", color: "bg-orange-400/20 text-orange-300 border-orange-400" },
-  { type: "CX", label: "CX", short: "CX", color: "bg-pink-500/20 text-pink-400 border-pink-500" },
-  { type: "SWAP", label: "SWAP", short: "SWAP", color: "bg-cyan-500/20 text-cyan-400 border-cyan-500" },
-  { type: "M", label: "Measure", short: "M", color: "bg-zinc-700/50 text-white border-zinc-500" },
+  {
+    type: "I",
+    label: "I (Spacer)",
+    short: "I",
+    color: "bg-gray-500/20 text-gray-400 border-gray-500 border-dashed",
+  },
+  {
+    type: "H",
+    label: "H",
+    short: "H",
+    color: "bg-blue-500/20 text-blue-400 border-blue-500",
+  },
+  {
+    type: "X",
+    label: "X",
+    short: "X",
+    color: "bg-red-500/20 text-red-400 border-red-500",
+  },
+  {
+    type: "Y",
+    label: "Y",
+    short: "Y",
+    color: "bg-green-500/20 text-green-400 border-green-500",
+  },
+  {
+    type: "Z",
+    label: "Z",
+    short: "Z",
+    color: "bg-purple-500/20 text-purple-400 border-purple-500",
+  },
+  {
+    type: "S",
+    label: "S",
+    short: "S",
+    color: "bg-yellow-500/20 text-yellow-400 border-yellow-500",
+  },
+  {
+    type: "T",
+    label: "T",
+    short: "T",
+    color: "bg-orange-500/20 text-orange-400 border-orange-500",
+  },
+  {
+    type: "SX",
+    label: "√X",
+    short: "√X",
+    color: "bg-red-400/20 text-red-300 border-red-400",
+  },
+  {
+    type: "SDG",
+    label: "S†",
+    short: "S†",
+    color: "bg-yellow-400/20 text-yellow-300 border-yellow-400",
+  },
+  {
+    type: "TDG",
+    label: "T†",
+    short: "T†",
+    color: "bg-orange-400/20 text-orange-300 border-orange-400",
+  },
+  {
+    type: "CX",
+    label: "CX",
+    short: "CX",
+    color: "bg-pink-500/20 text-pink-400 border-pink-500",
+  },
+  {
+    type: "SWAP",
+    label: "SWAP",
+    short: "SWAP",
+    color: "bg-cyan-500/20 text-cyan-400 border-cyan-500",
+  },
+  {
+    type: "M",
+    label: "Measure",
+    short: "M",
+    color: "bg-zinc-700/50 text-white border-zinc-500",
+  },
 ];
 
 const BACKENDS = [
@@ -65,7 +137,10 @@ function generateQiskitCode(numQubits, circuit, hasMeasureGate) {
     layer.forEach((gate) => {
       const q = gate.wire;
       if (gate.type === "CX" || gate.type === "SWAP") {
-        let target = gate.target !== undefined && gate.target !== null ? gate.target : (q + 1) % numQubits;
+        let target =
+          gate.target !== undefined && gate.target !== null
+            ? gate.target
+            : (q + 1) % numQubits;
         if (numQubits > 1 && target !== q) {
           pyCode += `qc.${gate.type.toLowerCase()}(${q}, ${target})\n`;
           pyCode += `qc_state.${gate.type.toLowerCase()}(${q}, ${target})\n`;
@@ -118,7 +193,14 @@ print("STATE_PROBS=" + json.dumps(prob_map))
 }
 
 const PENNYLANE_GATE_MAP = {
-  H: "Hadamard", X: "PauliX", Y: "PauliY", Z: "PauliZ", S: "S", T: "T", SX: "SX", I: "Identity",
+  H: "Hadamard",
+  X: "PauliX",
+  Y: "PauliY",
+  Z: "PauliZ",
+  S: "S",
+  T: "T",
+  SX: "SX",
+  I: "Identity",
 };
 
 function generatePennyLaneCode(numQubits, circuit) {
@@ -135,11 +217,19 @@ function generatePennyLaneCode(numQubits, circuit) {
       const q = gate.wire;
       if (gate.type === "M" || gate.type === "I") return; // measurement is implicit; identity is a no-op for state
       if (gate.type === "CX") {
-        const target = gate.target !== undefined && gate.target !== null ? gate.target : (q + 1) % numQubits;
-        if (numQubits > 1 && target !== q) bodyLines.push(`    qml.CNOT(wires=[${q}, ${target}])`);
+        const target =
+          gate.target !== undefined && gate.target !== null
+            ? gate.target
+            : (q + 1) % numQubits;
+        if (numQubits > 1 && target !== q)
+          bodyLines.push(`    qml.CNOT(wires=[${q}, ${target}])`);
       } else if (gate.type === "SWAP") {
-        const target = gate.target !== undefined && gate.target !== null ? gate.target : (q + 1) % numQubits;
-        if (numQubits > 1 && target !== q) bodyLines.push(`    qml.SWAP(wires=[${q}, ${target}])`);
+        const target =
+          gate.target !== undefined && gate.target !== null
+            ? gate.target
+            : (q + 1) % numQubits;
+        if (numQubits > 1 && target !== q)
+          bodyLines.push(`    qml.SWAP(wires=[${q}, ${target}])`);
       } else if (gate.type === "SDG") {
         bodyLines.push(`    qml.adjoint(qml.S)(wires=${q})`);
       } else if (gate.type === "TDG") {
@@ -162,7 +252,12 @@ function generatePennyLaneCode(numQubits, circuit) {
 }
 
 const CIRQ_GATE_MAP = {
-  H: "H", X: "X", Y: "Y", Z: "Z", S: "S", T: "T",
+  H: "H",
+  X: "X",
+  Y: "Y",
+  Z: "Z",
+  S: "S",
+  T: "T",
 };
 
 function generateCirqCode(numQubits, circuit) {
@@ -177,11 +272,19 @@ function generateCirqCode(numQubits, circuit) {
       const q = gate.wire;
       if (gate.type === "M" || gate.type === "I") return;
       if (gate.type === "CX") {
-        const target = gate.target !== undefined && gate.target !== null ? gate.target : (q + 1) % numQubits;
-        if (numQubits > 1 && target !== q) py += `circuit.append(cirq.CNOT(qubits[${q}], qubits[${target}]))\n`;
+        const target =
+          gate.target !== undefined && gate.target !== null
+            ? gate.target
+            : (q + 1) % numQubits;
+        if (numQubits > 1 && target !== q)
+          py += `circuit.append(cirq.CNOT(qubits[${q}], qubits[${target}]))\n`;
       } else if (gate.type === "SWAP") {
-        const target = gate.target !== undefined && gate.target !== null ? gate.target : (q + 1) % numQubits;
-        if (numQubits > 1 && target !== q) py += `circuit.append(cirq.SWAP(qubits[${q}], qubits[${target}]))\n`;
+        const target =
+          gate.target !== undefined && gate.target !== null
+            ? gate.target
+            : (q + 1) % numQubits;
+        if (numQubits > 1 && target !== q)
+          py += `circuit.append(cirq.SWAP(qubits[${q}], qubits[${target}]))\n`;
       } else if (gate.type === "SX") {
         py += `circuit.append((cirq.X**0.5)(qubits[${q}]))\n`;
       } else if (gate.type === "SDG") {
@@ -208,10 +311,11 @@ function generateCirqCode(numQubits, circuit) {
 }
 
 function DraggableGate({ gate }) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
-    id: `palette-${gate.type}`,
-    data: { type: gate.type, label: gate.label, color: gate.color },
-  });
+  const { attributes, listeners, setNodeRef, transform, isDragging } =
+    useDraggable({
+      id: `palette-${gate.type}`,
+      data: { type: gate.type, label: gate.label, color: gate.color },
+    });
 
   const style = {
     transform: CSS.Translate.toString(transform),
@@ -231,7 +335,15 @@ function DraggableGate({ gate }) {
   );
 }
 
-function WireDroppable({ wireIndex, gates, onRemove, onUpdate, numQubits, activeGateIndex, activeLayerIndex }) {
+function WireDroppable({
+  wireIndex,
+  gates,
+  onRemove,
+  onUpdate,
+  numQubits,
+  activeGateIndex,
+  activeLayerIndex,
+}) {
   const { isOver, setNodeRef } = useDroppable({
     id: `wire-${wireIndex}`,
   });
@@ -241,12 +353,14 @@ function WireDroppable({ wireIndex, gates, onRemove, onUpdate, numQubits, active
       <div className="font-mono text-xs font-bold text-[var(--color-app-text-muted)] w-12">
         q[{wireIndex}]
       </div>
-      
+
       {/* The Droppable Wire Area */}
       <div
         ref={setNodeRef}
         className={`flex-1 h-full relative flex items-center px-4 rounded-lg transition-colors border-2 border-dashed ${
-          isOver ? "bg-[var(--color-app-primary)]/10 border-[var(--color-app-primary)]" : "bg-transparent border-transparent hover:border-[var(--color-app-border)]"
+          isOver
+            ? "bg-[var(--color-app-primary)]/10 border-[var(--color-app-primary)]"
+            : "bg-transparent border-transparent hover:border-[var(--color-app-border)]"
         }`}
       >
         {/* The literal wire line */}
@@ -256,36 +370,59 @@ function WireDroppable({ wireIndex, gates, onRemove, onUpdate, numQubits, active
         <div className="flex gap-2 relative z-10 overflow-x-auto w-full custom-scrollbar items-center">
           {gates.map((g, i) => {
             const isActive = activeGateIndex === i;
-            const isLayerActive = !isActive && activeLayerIndex !== null && activeLayerIndex !== undefined && activeLayerIndex === i;
+            const isLayerActive =
+              !isActive &&
+              activeLayerIndex !== null &&
+              activeLayerIndex !== undefined &&
+              activeLayerIndex === i;
             return (
               <div
                 key={i}
-                className={`h-12 w-16 shrink-0 flex flex-col items-center justify-center rounded-lg border-2 hover:scale-105 transition-all relative group/gate ${g.color} ${
+                className={`h-12 w-16 shrink-0 flex flex-col items-center justify-center rounded-lg border-2 hover:brightness-110 transition-all relative group/gate ${g.color} ${
                   isActive
                     ? "ring-4 ring-[var(--color-app-primary)] border-[var(--color-app-primary)] shadow-xl shadow-[var(--color-app-primary)]/50 scale-110 z-30 animate-pulse"
                     : isLayerActive
-                    ? "ring-2 ring-cyan-400/60 border-cyan-400 shadow-md shadow-cyan-500/20"
-                    : ""
+                      ? "ring-2 ring-cyan-400/60 border-cyan-400 shadow-md shadow-cyan-500/20"
+                      : ""
                 }`}
               >
-                <div 
+                <div
                   className="absolute top-0 right-0 -mt-2 -mr-2 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] opacity-0 group-hover/gate:opacity-100 cursor-pointer z-20"
-                  onClick={(e) => { e.stopPropagation(); onRemove(wireIndex, i); }}
-                >✕</div>
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onRemove(wireIndex, i);
+                  }}
+                >
+                  ✕
+                </div>
                 <span className="font-bold text-sm">{g.short || g.label}</span>
                 {(g.type === "CX" || g.type === "SWAP") && (
-                  <select 
+                  <select
                     className="text-[10px] bg-black/40 mt-0.5 border border-pink-500/50 rounded px-1 outline-none text-pink-400 font-mono cursor-pointer"
-                    value={g.target !== undefined ? g.target : ((wireIndex + 1) % numQubits)}
-                    onChange={(e) => onUpdate(wireIndex, i, { ...g, target: parseInt(e.target.value) })}
+                    value={
+                      g.target !== undefined
+                        ? g.target
+                        : (wireIndex + 1) % numQubits
+                    }
+                    onChange={(e) =>
+                      onUpdate(wireIndex, i, {
+                        ...g,
+                        target: parseInt(e.target.value),
+                      })
+                    }
                   >
-                    {Array.from({ length: numQubits }).map((_, targetIdx) => (
-                      targetIdx !== wireIndex && (
-                        <option key={targetIdx} value={targetIdx} className="bg-[var(--color-app-surface)]">
-                          → q[{targetIdx}]
-                        </option>
-                      )
-                    ))}
+                    {Array.from({ length: numQubits }).map(
+                      (_, targetIdx) =>
+                        targetIdx !== wireIndex && (
+                          <option
+                            key={targetIdx}
+                            value={targetIdx}
+                            className="bg-[var(--color-app-surface)]"
+                          >
+                            → q[{targetIdx}]
+                          </option>
+                        ),
+                    )}
                   </select>
                 )}
               </div>
@@ -302,7 +439,6 @@ function WireDroppable({ wireIndex, gates, onRemove, onUpdate, numQubits, active
   );
 }
 
-
 export default function CircuitSimulatorPage() {
   const location = useLocation();
   const initialCircuit = location.state?.initialCircuit;
@@ -314,7 +450,9 @@ export default function CircuitSimulatorPage() {
     if (initialCircuit) return initialCircuit;
     return { 0: [], 1: [], 2: [] };
   });
-  const [bridgeNotice, setBridgeNotice] = useState(bridgeOrigin === "why-quantum");
+  const [bridgeNotice, setBridgeNotice] = useState(
+    bridgeOrigin === "why-quantum",
+  );
   const [activeDragItem, setActiveDragItem] = useState(null);
   const [backend, setBackend] = useState("qiskit");
 
@@ -327,6 +465,7 @@ export default function CircuitSimulatorPage() {
   const [qasmModal, setQasmModal] = useState(null); // { mode: "export"|"import", text }
   const [qasmError, setQasmError] = useState(null);
   const [stateProbs, setStateProbs] = useState(null);
+  const [expandedSimulationImage, setExpandedSimulationImage] = useState(null);
 
   // ─── Quantum Time Machine State ───
   const [timeline, setTimeline] = useState(null);
@@ -339,7 +478,13 @@ export default function CircuitSimulatorPage() {
 
   // Playback timer effect
   useEffect(() => {
-    if (!isPlaying || !timeline || !timeline.steps || timeline.steps.length === 0) return;
+    if (
+      !isPlaying ||
+      !timeline ||
+      !timeline.steps ||
+      timeline.steps.length === 0
+    )
+      return;
     const intervalMs = Math.round(1200 / playbackSpeed);
     const timer = setInterval(() => {
       setCurrentStepIndex((prev) => {
@@ -361,11 +506,11 @@ export default function CircuitSimulatorPage() {
   const handleDragEnd = (event) => {
     setActiveDragItem(null);
     const { over, active } = event;
-    
+
     if (over && over.id.toString().startsWith("wire-")) {
       const wireIndex = parseInt(over.id.split("-")[1], 10);
       const gateData = active.data.current;
-      
+
       setCircuit((prev) => ({
         ...prev,
         [wireIndex]: [...(prev[wireIndex] || []), gateData],
@@ -396,7 +541,7 @@ export default function CircuitSimulatorPage() {
     let val = parseInt(e.target.value);
     if (isNaN(val) || val < 1) val = 1;
     if (val > 10) val = 10;
-    
+
     setCircuit((prev) => {
       const fresh = { ...prev };
       for (let i = 0; i < val; i++) {
@@ -429,7 +574,10 @@ export default function CircuitSimulatorPage() {
     return flattenCircuitByLayer(numQubits, circuit);
   }, [circuit, numQubits]);
 
-  const flattenedTimelineGates = useMemo(() => flattenTimelineGates(), [flattenTimelineGates]);
+  const flattenedTimelineGates = useMemo(
+    () => flattenTimelineGates(),
+    [flattenTimelineGates],
+  );
 
   // Identify currently active gate on the wires
   const activeGateInfo = useMemo(() => {
@@ -449,11 +597,15 @@ export default function CircuitSimulatorPage() {
 
   const handleRunTimeline = async () => {
     if (numQubits > 8) {
-      setTimelineError("Quantum Time Machine supports up to 8 qubits. Please set Number of Qubits to 8 or fewer.");
+      setTimelineError(
+        "Quantum Time Machine supports up to 8 qubits. Please set Number of Qubits to 8 or fewer.",
+      );
       return;
     }
     if (flattenedTimelineGates.length > 30) {
-      setTimelineError(`Quantum Time Machine supports up to 30 gates. Current circuit has ${flattenedTimelineGates.length} gates.`);
+      setTimelineError(
+        `Quantum Time Machine supports up to 30 gates. Current circuit has ${flattenedTimelineGates.length} gates.`,
+      );
       return;
     }
 
@@ -462,12 +614,14 @@ export default function CircuitSimulatorPage() {
     setIsPlaying(false);
 
     try {
-      const payloadGates = flattenedTimelineGates.map(({ type, wire, target, layerIndex }) => ({
-        type,
-        wire,
-        target,
-        layerIndex,
-      }));
+      const payloadGates = flattenedTimelineGates.map(
+        ({ type, wire, target, layerIndex }) => ({
+          type,
+          wire,
+          target,
+          layerIndex,
+        }),
+      );
 
       const res = await runCircuitTimeline({
         numQubits,
@@ -483,7 +637,11 @@ export default function CircuitSimulatorPage() {
       }
     } catch (err) {
       console.error("Timeline error:", err);
-      setTimelineError(err?.response?.data?.error || err.message || "Failed to connect to timeline backend.");
+      setTimelineError(
+        err?.response?.data?.error ||
+          err.message ||
+          "Failed to connect to timeline backend.",
+      );
     } finally {
       setTimelineLoading(false);
     }
@@ -492,7 +650,6 @@ export default function CircuitSimulatorPage() {
   const hasMeasureGate = () => {
     for (let q = 0; q < numQubits; q++) {
       if (circuit[q] && circuit[q].some((g) => g.type === "M")) return true;
-
     }
     return false;
   };
@@ -505,8 +662,8 @@ export default function CircuitSimulatorPage() {
 
     const pyCode = generateCode(backend, numQubits, circuit, hasMeasureGate());
     console.log("=== GENERATED SANDBOX PYTHON ===");
-console.log(pyCode);
-console.log("=== END GENERATED SANDBOX PYTHON ===");
+    console.log(pyCode);
+    console.log("=== END GENERATED SANDBOX PYTHON ===");
 
     try {
       const { runSandboxCode } = await import("../../services/api");
@@ -516,7 +673,9 @@ console.log("=== END GENERATED SANDBOX PYTHON ===");
       if (probsMatch) {
         try {
           setStateProbs(JSON.parse(probsMatch[1]));
-        } catch (e) { /* ignore parse failure */ }
+        } catch (e) {
+          /* ignore parse failure */
+        }
         data.console = data.console.replace(/STATE_PROBS=\{.*\}\n?/, "");
       }
 
@@ -576,27 +735,43 @@ console.log("=== END GENERATED SANDBOX PYTHON ===");
       const fresh = {};
       for (let i = 0; i < n; i++) fresh[i] = [];
       gates.forEach((g) => {
-        const gateDef = GATES.find((gd) => gd.type === g.type) || { type: g.type, label: g.type, short: g.type, color: "bg-gray-500/20 text-gray-400 border-gray-500" };
+        const gateDef = GATES.find((gd) => gd.type === g.type) || {
+          type: g.type,
+          label: g.type,
+          short: g.type,
+          color: "bg-gray-500/20 text-gray-400 border-gray-500",
+        };
         fresh[g.qubit].push({ ...gateDef, target: g.target });
       });
       setNumQubits(n);
       setCircuit(fresh);
       setQasmModal(null);
     } catch (err) {
-      setQasmError(err?.response?.data?.error || "Invalid QASM — could not parse.");
+      setQasmError(
+        err?.response?.data?.error || "Invalid QASM — could not parse.",
+      );
     }
   };
 
   return (
     <div className="flex h-[calc(100vh-60px)] w-full flex-col bg-[var(--color-app-base)] text-[var(--color-app-text-main)]">
-      
       {/* Header */}
       <div className="flex items-center justify-between bg-[var(--color-app-surface)] px-8 py-4 border-b border-[var(--color-app-border)]">
         <div>
           <h1 className="text-sm font-bold flex items-center gap-3 text-[var(--color-app-text-main)]">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[var(--color-app-accent)] to-[var(--color-app-accent-hover)]">
-              <svg className="h-4 w-4 text-[var(--color-app-base)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+              <svg
+                className="h-4 w-4 text-[var(--color-app-base)]"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"
+                />
               </svg>
             </div>
             Drag-and-Drop Circuit Simulator
@@ -605,7 +780,7 @@ console.log("=== END GENERATED SANDBOX PYTHON ===");
             Build quantum circuits visually and simulate them on the fly.
           </p>
         </div>
-        
+
         <div className="flex items-center gap-3">
           <select
             value={backend}
@@ -614,12 +789,23 @@ console.log("=== END GENERATED SANDBOX PYTHON ===");
             title="Simulation backend"
           >
             {BACKENDS.map((b) => (
-              <option key={b.id} value={b.id}>{b.label}</option>
+              <option key={b.id} value={b.id}>
+                {b.label}
+              </option>
             ))}
           </select>
-          <Button variant="outline" onClick={clearCircuit}>Clear</Button>
-          <Button variant="outline" onClick={handleExportQasm}>↓ Export QASM</Button>
-          <Button variant="outline" onClick={() => setQasmModal({ mode: "import", text: "" })}>↑ Import QASM</Button>
+          <Button variant="outline" onClick={clearCircuit}>
+            Clear
+          </Button>
+          <Button variant="outline" onClick={handleExportQasm}>
+            ↓ Export QASM
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => setQasmModal({ mode: "import", text: "" })}
+          >
+            ↑ Import QASM
+          </Button>
           <Button variant="outline" loading={comparing} onClick={runComparison}>
             {comparing ? "Comparing..." : "⇄ Compare Backends"}
           </Button>
@@ -644,7 +830,12 @@ console.log("=== END GENERATED SANDBOX PYTHON ===");
           <div className="flex items-center gap-2">
             <span>🔬</span>
             <span>
-              <strong>Transferred from Micro Module 1: Why Quantum?</strong> Preloaded with the single-qubit Hadamard experiment (<code className="bg-black/30 px-1 py-0.5 rounded text-blue-200">|0⟩ ── H ── M</code>). Drag gates to experiment freely!
+              <strong>Transferred from Micro Module 1: Why Quantum?</strong>{" "}
+              Preloaded with the single-qubit Hadamard experiment (
+              <code className="bg-black/30 px-1 py-0.5 rounded text-blue-200">
+                |0⟩ ── H ── M
+              </code>
+              ). Drag gates to experiment freely!
             </span>
           </div>
           <button
@@ -657,10 +848,16 @@ console.log("=== END GENERATED SANDBOX PYTHON ===");
       )}
 
       <div className="flex flex-1 overflow-hidden">
-        <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd} collisionDetection={closestCenter}>
-          
+        <DndContext
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+          collisionDetection={closestCenter}
+        >
           {/* Left Sidebar: Gate Palette */}
-          <div className="w-64 bg-[var(--color-app-surface)] border-r border-[var(--color-app-border)] p-6 overflow-y-auto" data-lenis-prevent="true">
+          <div
+            className="w-64 bg-[var(--color-app-surface)] border-r border-[var(--color-app-border)] p-6 overflow-y-auto"
+            data-lenis-prevent="true"
+          >
             <h3 className="text-xs font-bold uppercase tracking-[0.15em] text-[var(--color-app-accent)] mb-6 border-b border-[var(--color-app-border)] pb-2">
               Gate Palette
             </h3>
@@ -675,11 +872,15 @@ console.log("=== END GENERATED SANDBOX PYTHON ===");
           </div>
 
           {/* Main Area: Circuit Wire Grid */}
-          <div className="flex-1 p-8 overflow-y-auto bg-[var(--color-app-base)] flex flex-col" data-lenis-prevent="true">
-            
+          <div
+            className="flex-1 p-8 overflow-y-auto bg-[var(--color-app-base)] flex flex-col"
+            data-lenis-prevent="true"
+          >
             {/* Qubit Controls */}
             <div className="flex justify-end gap-2 mb-6 items-center">
-              <label className="text-xs font-bold text-[var(--color-app-text-muted)] uppercase tracking-wider">Number of Qubits:</label>
+              <label className="text-xs font-bold text-[var(--color-app-text-muted)] uppercase tracking-wider">
+                Number of Qubits:
+              </label>
               <input
                 type="number"
                 min="1"
@@ -700,7 +901,11 @@ console.log("=== END GENERATED SANDBOX PYTHON ===");
                   onRemove={removeGate}
                   onUpdate={updateGate}
                   numQubits={numQubits}
-                  activeGateIndex={activeGateInfo?.wireIndex === i ? activeGateInfo.gateIndexOnWire : null}
+                  activeGateIndex={
+                    activeGateInfo?.wireIndex === i
+                      ? activeGateInfo.gateIndexOnWire
+                      : null
+                  }
                   activeLayerIndex={activeGateInfo?.layerIndex}
                 />
               ))}
@@ -710,14 +915,22 @@ console.log("=== END GENERATED SANDBOX PYTHON ===");
             {timelineLoading && (
               <div className="mt-8 p-6 rounded-2xl app-glass border border-cyan-500/30 flex items-center justify-center gap-3 text-cyan-300 animate-pulse">
                 <div className="w-5 h-5 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
-                <span className="text-sm font-bold">Traveling through quantum timeline... (Calculating gate-by-gate state evolution)</span>
+                <span className="text-sm font-bold">
+                  Traveling through quantum timeline... (Calculating
+                  gate-by-gate state evolution)
+                </span>
               </div>
             )}
 
             {timelineError && (
               <div className="mt-8 p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-xs flex items-center justify-between">
                 <span>⚠️ {timelineError}</span>
-                <button onClick={() => setTimelineError(null)} className="text-xs font-bold underline">Dismiss</button>
+                <button
+                  onClick={() => setTimelineError(null)}
+                  className="text-xs font-bold underline"
+                >
+                  Dismiss
+                </button>
               </div>
             )}
 
@@ -744,7 +957,6 @@ console.log("=== END GENERATED SANDBOX PYTHON ===");
               />
             )}
 
-
             {/* Cross-Backend Comparison Results */}
             {compareResults && (
               <div className="mt-8 animate-fade-in">
@@ -755,8 +967,15 @@ console.log("=== END GENERATED SANDBOX PYTHON ===");
                   {BACKENDS.map((b) => {
                     const r = compareResults[b.id];
                     return (
-                      <div key={b.id} className="app-glass rounded-xl p-4 border border-[var(--color-app-border)]">
-                        <div className={`text-xs font-bold uppercase tracking-wider mb-3 ${b.color}`}>{b.label}</div>
+                      <div
+                        key={b.id}
+                        className="app-glass rounded-xl p-4 border border-[var(--color-app-border)]"
+                      >
+                        <div
+                          className={`text-xs font-bold uppercase tracking-wider mb-3 ${b.color}`}
+                        >
+                          {b.label}
+                        </div>
                         {r?.errorText ? (
                           <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 font-mono text-[10px] whitespace-pre-wrap max-h-40 overflow-y-auto">
                             {r.errorText}
@@ -768,7 +987,9 @@ console.log("=== END GENERATED SANDBOX PYTHON ===");
                             alt={`${b.label} histogram`}
                           />
                         ) : (
-                          <div className="text-xs text-[var(--color-app-text-muted)] italic">No output.</div>
+                          <div className="text-xs text-[var(--color-app-text-muted)] italic">
+                            No output.
+                          </div>
                         )}
                       </div>
                     );
@@ -782,28 +1003,35 @@ console.log("=== END GENERATED SANDBOX PYTHON ===");
               <div className="mt-8 animate-fade-in">
                 <h3 className="text-xs font-bold uppercase tracking-[0.15em] text-[var(--color-app-primary)] mb-4 border-b border-[var(--color-app-border)] pb-2 flex items-center gap-2">
                   Simulation Results
-                  <span className={`text-[10px] px-2 py-0.5 rounded-full border border-current ${BACKENDS.find((b) => b.id === backend)?.color}`}>
+                  <span
+                    className={`text-[10px] px-2 py-0.5 rounded-full border border-current ${BACKENDS.find((b) => b.id === backend)?.color}`}
+                  >
                     {BACKENDS.find((b) => b.id === backend)?.label}
                   </span>
                   <button
-                    onClick={() => openTutor(
-  "Review my circuit — point out bugs and optimizations.",
-  {
-    page: "Circuit Simulator",
-    code: outputPython,
-    numQubits,
-    gates: flattenCircuitByLayer(numQubits, circuit),
-    layers: getCircuitLayers(numQubits, circuit),
-    probabilities: stateProbs || {},
-  }
-)}
+                    onClick={() =>
+                      openTutor(
+                        "Review my circuit — point out bugs and optimizations.",
+                        {
+                          page: "Circuit Simulator",
+                          code: outputPython,
+                          numQubits,
+                          gates: flattenCircuitByLayer(numQubits, circuit),
+                          layers: getCircuitLayers(numQubits, circuit),
+                          probabilities: stateProbs || {},
+                        },
+                      )
+                    }
                     className="ml-auto text-[10px] normal-case tracking-normal font-semibold px-2.5 py-1 rounded-full transition-colors"
-                    style={{ border: "1px solid var(--color-app-primary)", color: "var(--color-app-primary)" }}
+                    style={{
+                      border: "1px solid var(--color-app-primary)",
+                      color: "var(--color-app-primary)",
+                    }}
                   >
                     ✨ Ask AI Tutor
                   </button>
                 </h3>
-                
+
                 {simResult.errorText ? (
                   <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 font-mono text-xs whitespace-pre-wrap">
                     {simResult.errorText}
@@ -811,37 +1039,75 @@ console.log("=== END GENERATED SANDBOX PYTHON ===");
                 ) : (
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {simResult.images && simResult.images.length > 0 && (
-                      <div className="app-glass rounded-xl p-4 flex justify-center">
-                        <img src={`data:image/png;base64,${simResult.images[0]}`} className="max-h-64 object-contain invert brightness-90 hue-rotate-180" alt="Circuit" />
+                      <div
+                        className="app-glass rounded-xl p-4 flex justify-center cursor-zoom-in group"
+                        onClick={() =>
+                          setExpandedSimulationImage(simResult.images[0])
+                        }
+                        title="Click to view full size"
+                      >
+                        <img
+                          src={`data:image/png;base64,${simResult.images[0]}`}
+                          className="max-h-64 object-contain invert brightness-90 hue-rotate-180 transition-transform duration-200 group-hover:scale-[1.02]"
+                          alt="Circuit"
+                        />
                       </div>
                     )}
                     {simResult.images && simResult.images.length > 1 && (
-                      <div className="app-glass rounded-xl p-4 flex justify-center">
-                        <img src={`data:image/png;base64,${simResult.images[1]}`} className="max-h-64 object-contain invert brightness-90 hue-rotate-180" alt="Histogram" />
+                      <div
+                        className="app-glass rounded-xl p-4 flex justify-center cursor-zoom-in group"
+                        onClick={() =>
+                          setExpandedSimulationImage(simResult.images[1])
+                        }
+                        title="Click to view full size"
+                      >
+                        <img
+                          src={`data:image/png;base64,${simResult.images[1]}`}
+                          className="max-h-64 object-contain invert brightness-90 hue-rotate-180 transition-transform duration-200 group-hover:scale-[1.02]"
+                          alt="Histogram"
+                        />
                       </div>
                     )}
-                    {stateProbs && <StateProbabilityHeatmap probabilities={stateProbs} />}
+                    {stateProbs && (
+                      <StateProbabilityHeatmap probabilities={stateProbs} />
+                    )}
                   </div>
                 )}
-                
+
                 {/* Code Output */}
                 {!simResult.errorText && outputPython && (
                   <div className="mt-8">
                     <div className="rounded-none overflow-hidden bg-[#161616] border border-[#333333] shadow-inner relative mt-6 mb-6">
-                      <button 
+                      <button
                         onClick={(e) => {
                           navigator.clipboard.writeText(outputPython);
                           const btn = e.currentTarget;
                           const copyIcon = `<svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>`;
                           const checkIcon = `<svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 13l4 4L19 7"></path></svg>`;
                           btn.innerHTML = checkIcon;
-                          btn.classList.add('!text-[#4ade80]');
-                          setTimeout(() => { btn.innerHTML = copyIcon; btn.classList.remove('!text-[#4ade80]'); }, 2000);
+                          btn.classList.add("!text-[#4ade80]");
+                          setTimeout(() => {
+                            btn.innerHTML = copyIcon;
+                            btn.classList.remove("!text-[#4ade80]");
+                          }, 2000);
                         }}
                         className="absolute top-3 right-3 text-[#8c8c8c] hover:text-white bg-transparent hover:bg-white/10 p-1.5 rounded flex items-center justify-center transition-all z-10"
                         title="Copy to clipboard"
                       >
-                        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                        <svg
+                          width="18"
+                          height="18"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="1.5"
+                            d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                          ></path>
+                        </svg>
                       </button>
                       <pre className="!m-0 !p-5 !pr-12 !bg-transparent text-[#f4f4f4] text-[0.85rem] font-mono whitespace-pre-wrap">
                         <code>{outputPython}</code>
@@ -851,12 +1117,13 @@ console.log("=== END GENERATED SANDBOX PYTHON ===");
                 )}
               </div>
             )}
-            
           </div>
 
           <DragOverlay>
             {activeDragItem ? (
-              <div className={`h-12 w-12 flex items-center justify-center rounded-lg border-2 font-bold shadow-2xl scale-110 ${activeDragItem.color}`}>
+              <div
+                className={`h-12 w-12 flex items-center justify-center rounded-lg border-2 font-bold shadow-2xl scale-110 ${activeDragItem.color}`}
+              >
                 {activeDragItem.label}
               </div>
             ) : null}
@@ -866,39 +1133,78 @@ console.log("=== END GENERATED SANDBOX PYTHON ===");
 
       {/* OpenQASM Export/Import Modal */}
       {qasmModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setQasmModal(null)}>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+          onClick={() => setQasmModal(null)}
+        >
           <div
             className="w-full max-w-xl rounded-2xl p-6 app-glass border border-[var(--color-app-border)] shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-sm font-bold uppercase tracking-wider mb-1" style={{ color: "var(--color-app-text-main)" }}>
-              {qasmModal.mode === "export" ? "Export to OpenQASM 2.0" : "Import from OpenQASM 2.0"}
+            <h3
+              className="text-sm font-bold uppercase tracking-wider mb-1"
+              style={{ color: "var(--color-app-text-main)" }}
+            >
+              {qasmModal.mode === "export"
+                ? "Export to OpenQASM 2.0"
+                : "Import from OpenQASM 2.0"}
             </h3>
-            <p className="text-xs mb-4" style={{ color: "var(--color-app-text-muted)" }}>
+            <p
+              className="text-xs mb-4"
+              style={{ color: "var(--color-app-text-muted)" }}
+            >
               {qasmModal.mode === "export"
                 ? "Paste this into Qiskit, PennyLane, or Cirq notebooks that support OpenQASM."
                 : "Paste OpenQASM 2.0 code exported from Qiskit or another tool."}
             </p>
             <textarea
               value={qasmModal.text}
-              onChange={(e) => setQasmModal({ ...qasmModal, text: e.target.value })}
+              onChange={(e) =>
+                setQasmModal({ ...qasmModal, text: e.target.value })
+              }
               readOnly={qasmModal.mode === "export"}
               rows={10}
               className="w-full rounded-lg p-3 font-mono text-xs outline-none resize-none"
-              style={{ background: "#161616", color: "#f4f4f4", border: "1px solid var(--color-app-border)" }}
+              style={{
+                background: "#161616",
+                color: "#f4f4f4",
+                border: "1px solid var(--color-app-border)",
+              }}
               placeholder={`OPENQASM 2.0;\ninclude "qelib1.inc";\nqreg q[2];\ncreg c[2];\nh q[0];\ncx q[0],q[1];`}
             />
-            {qasmError && <p className="text-xs text-red-400 mt-2">{qasmError}</p>}
+            {qasmError && (
+              <p className="text-xs text-red-400 mt-2">{qasmError}</p>
+            )}
             <div className="flex justify-end gap-2 mt-4">
-              <Button variant="outline" onClick={() => setQasmModal(null)}>Close</Button>
+              <Button variant="outline" onClick={() => setQasmModal(null)}>
+                Close
+              </Button>
               {qasmModal.mode === "export" ? (
-                <Button variant="primary" onClick={() => navigator.clipboard.writeText(qasmModal.text)}>Copy</Button>
+                <Button
+                  variant="primary"
+                  onClick={() => navigator.clipboard.writeText(qasmModal.text)}
+                >
+                  Copy
+                </Button>
               ) : (
-                <Button variant="primary" onClick={() => handleImportQasm(qasmModal.text)}>Import</Button>
+                <Button
+                  variant="primary"
+                  onClick={() => handleImportQasm(qasmModal.text)}
+                >
+                  Import
+                </Button>
               )}
             </div>
           </div>
         </div>
+      )}
+
+      {expandedSimulationImage && (
+        <ImageLightbox
+          src={`data:image/png;base64,${expandedSimulationImage}`}
+          alt="Simulation Result — Full View"
+          onClose={() => setExpandedSimulationImage(null)}
+        />
       )}
     </div>
   );
