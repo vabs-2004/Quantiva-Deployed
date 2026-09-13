@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "concurrently \"vite\" \"npm run dev --prefix backend\"",
+    "dev": "concurrently \"vite\" \"npm run start --prefix backend\"",
     "build": "vite build",
     "lint": "oxlint",
     "preview": "vite preview"
