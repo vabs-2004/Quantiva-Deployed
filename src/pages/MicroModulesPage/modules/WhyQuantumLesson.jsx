@@ -27,24 +27,43 @@ export default function WhyQuantumLesson({ onComplete, isCompleted, onAskQuantiv
   const [coinStats, setCoinStats] = useState({ flips: 0, heads: 0, tails: 0 });
 
   const flipCoin = () => {
-    if (coinFlipping) return;
-    setCoinFlipping(true);
-    const resultIsHeads = Math.random() < 0.5;
-    const spins = 5 + Math.floor(Math.random() * 3);
-    const targetDeg = coinRotation + spins * 360 + (resultIsHeads ? 0 : 180);
-    setCoinRotation(targetDeg);
+  if (coinFlipping) return;
 
-    setTimeout(() => {
-      const outcome = resultIsHeads ? "0" : "1";
-      setCoinSide(outcome);
-      setCoinStats((prev) => ({
-        flips: prev.flips + 1,
-        heads: prev.heads + (resultIsHeads ? 1 : 0),
-        tails: prev.tails + (resultIsHeads ? 0 : 1),
-      }));
-      setCoinFlipping(false);
-    }, 1000);
-  };
+  setCoinFlipping(true);
+
+  const resultIsHeads = Math.random() < 0.5;
+  const spins = 5 + Math.floor(Math.random() * 3);
+
+  // Current orientation within one 360° cycle
+  const currentNormalized = ((coinRotation % 360) + 360) % 360;
+
+  // Heads = 0°, Tails = 180°
+  const desiredOffset = resultIsHeads ? 0 : 180;
+
+  // Calculate how far we need to rotate from the current face
+  // to reach the desired face.
+  const extraRotation =
+    ((desiredOffset - currentNormalized) + 360) % 360;
+
+  const targetDeg =
+    coinRotation +
+    spins * 360 +
+    extraRotation;
+
+  setCoinRotation(targetDeg);
+
+  setTimeout(() => {
+    setCoinSide(resultIsHeads ? "0" : "1");
+
+    setCoinStats((prev) => ({
+      flips: prev.flips + 1,
+      heads: prev.heads + (resultIsHeads ? 1 : 0),
+      tails: prev.tails + (resultIsHeads ? 0 : 1),
+    }));
+
+    setCoinFlipping(false);
+  }, 1000);
+};
 
   // ─── 3. Interactive State & Probability Exploration ──────────
   // θ in [0, π]. α = cos(θ/2), β = sin(θ/2).
@@ -236,36 +255,44 @@ export default function WhyQuantumLesson({ onComplete, isCompleted, onAskQuantiv
               style={{ perspective: "800px" }}
               onClick={flipCoin}
             >
-              <motion.div
-                className="w-full h-full rounded-full relative flex items-center justify-center shadow-[0_0_35px_rgba(234,179,8,0.25)] border-4 border-amber-400/80"
-                style={{
-                  transformStyle: "preserve-3d",
-                  background: "radial-gradient(circle at 35% 35%, #fde047, #ca8a04 70%, #854d0e 100%)",
-                }}
-                animate={{ rotateX: coinRotation }}
-                transition={{ duration: 1, ease: [0.25, 1, 0.5, 1] }}
-              >
-                {/* Front Face (0 / Heads) */}
-                <div
-                  className="absolute inset-0 rounded-full flex flex-col items-center justify-center text-amber-950 font-extrabold"
-                  style={{ backfaceVisibility: "hidden" }}
-                >
-                  <span className="text-4xl font-mono">0</span>
-                  <span className="text-[10px] uppercase tracking-widest font-bold opacity-80">Heads</span>
-                </div>
+            <motion.div
+  className="w-full h-full rounded-full relative flex items-center justify-center shadow-[0_0_35px_rgba(234,179,8,0.25)] border-4 border-amber-400/80"
+  style={{
+    transformStyle: "preserve-3d",
+    background:
+      "radial-gradient(circle at 35% 35%, #fde047, #ca8a04 70%, #854d0e 100%)",
+  }}
+  animate={{ rotateY: coinRotation }}
+  transition={{ duration: 1, ease: [0.25, 1, 0.5, 1] }}
+>
+  {/* Front Face (0 / Heads) */}
+  <div
+    className="absolute inset-0 rounded-full flex flex-col items-center justify-center text-amber-950 font-extrabold"
+    style={{
+      backfaceVisibility: "hidden",
+      transform: "translateZ(2px)",
+    }}
+  >
+    <span className="text-4xl font-mono">0</span>
+    <span className="text-[10px] uppercase tracking-widest font-bold opacity-80">
+      Heads
+    </span>
+  </div>
 
-                {/* Back Face (1 / Tails) */}
-                <div
-                  className="absolute inset-0 rounded-full flex flex-col items-center justify-center text-amber-950 font-extrabold"
-                  style={{
-                    backfaceVisibility: "hidden",
-                    transform: "rotateX(180deg)",
-                  }}
-                >
-                  <span className="text-4xl font-mono">1</span>
-                  <span className="text-[10px] uppercase tracking-widest font-bold opacity-80">Tails</span>
-                </div>
-              </motion.div>
+  {/* Back Face (1 / Tails) */}
+  <div
+    className="absolute inset-0 rounded-full flex flex-col items-center justify-center text-amber-950 font-extrabold"
+    style={{
+      backfaceVisibility: "hidden",
+      transform: "rotateY(180deg) translateZ(2px)",
+    }}
+  >
+    <span className="text-4xl font-mono">1</span>
+    <span className="text-[10px] uppercase tracking-widest font-bold opacity-80">
+      Tails
+    </span>
+  </div>
+</motion.div>
             </div>
 
             <button
