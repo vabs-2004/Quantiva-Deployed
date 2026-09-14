@@ -156,7 +156,10 @@ export default function EducationalTabs({ algorithmId }) {
   if (!content) return null;
 
   return (
-    <div className="mb-10 app-glass rounded-xl overflow-hidden shadow-lg bg-[var(--color-app-surface)]/70 relative">
+    <div
+      data-lens-active-tab={activeTab}
+      className="mb-10 app-glass rounded-xl overflow-hidden shadow-lg bg-[var(--color-app-surface)]/70 relative"
+    >
       {/* Header Tabs */}
       <div className="flex items-center justify-between border-b border-[var(--color-app-border)] bg-black/20 pr-4">
         <div className="flex overflow-x-auto custom-scrollbar">

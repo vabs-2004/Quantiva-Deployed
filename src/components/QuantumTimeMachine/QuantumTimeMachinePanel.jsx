@@ -348,6 +348,12 @@ export default function QuantumTimeMachinePanel({
           isSimulating={isSimulatingNoise}
           activeNoiseConfig={activeNoiseConfig}
           divergenceSummary={noisyTimeline?.divergenceSummary}
+          idealStep={currentStep}
+          noisyStep={currentNoisyStep}
+          stepIndex={currentStepIndex}
+          totalSteps={timeline?.totalSteps || 1}
+          selectedQubit={selectedQubit}
+          numQubits={numQubits}
         />
       )}
 
@@ -443,11 +449,14 @@ export default function QuantumTimeMachinePanel({
           noisyStep={currentNoisyStep}
           idealStep={currentStep}
           stepIndex={currentStepIndex}
+          totalSteps={timeline?.totalSteps || 1}
           timelineId={timeline?.timelineId}
           noisyTimelineId={noisyTimeline?.noisyTimelineId}
           divergenceSummary={noisyTimeline?.divergenceSummary}
           noiseModel={activeNoiseConfig?.noiseModel}
           noiseStrength={activeNoiseConfig?.noiseStrength}
+          selectedQubit={selectedQubit}
+          numQubits={numQubits}
         />
       )}
 
@@ -494,6 +503,12 @@ export default function QuantumTimeMachinePanel({
             selectedQubit={selectedQubit}
             onSelectQubit={setSelectedQubit}
             numQubits={numQubits}
+            idealStep={currentStep}
+            noisyStep={currentNoisyStep}
+            stepIndex={currentStepIndex}
+            totalSteps={timeline?.totalSteps || 1}
+            activeNoiseConfig={activeNoiseConfig}
+            divergenceSummary={noisyTimeline?.divergenceSummary}
           />
 
           {/* ----------------------------------------------------

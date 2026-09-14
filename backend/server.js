@@ -36,12 +36,13 @@ const microModuleRoutes = require("./routes/microModuleRoutes");
 const searchRoutes = require("./routes/searchRoutes");
 const topicRoutes = require("./routes/topicRoutes");
 const generatedLessonRoutes = require("./routes/generatedLessonRoutes");
+const contextLensRoutes = require("./routes/contextLensRoutes");
 
 const app = express();
 const PORT = process.env.PORT || 8000;
 const IS_PRODUCTION = process.env.NODE_ENV === "production";
 
-// ─── Security: Helmet (HTTP security headers) ────
+// ─── Security: Helmet ────────────────────────────
 app.use(
   helmet({
     crossOriginResourcePolicy: {
@@ -50,6 +51,14 @@ app.use(
     crossOriginOpenerPolicy: {
       policy: "same-origin-allow-popups",
     },
+  })
+);
+
+// ─── CORS ─────────────────────────────────────────
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL || "http://localhost:5173",
+    credentials: true,
   })
 );
 
@@ -127,6 +136,7 @@ app.use("/api/micro-modules", microModuleRoutes);
 app.use("/api", searchRoutes);
 app.use("/api/topics", topicRoutes);
 app.use("/api/generated-lessons", generatedLessonRoutes);
+app.use("/api/context-lens", contextLensRoutes);
 
 // ─── Health check ────────────────────────────────
 app.get("/", (req, res) => {

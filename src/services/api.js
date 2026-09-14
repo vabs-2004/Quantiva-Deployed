@@ -16,6 +16,7 @@ const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: { "Content-Type": "application/json" },
   timeout: 120000,
+  withCredentials: true,
 });
 
 // ─── Axios Interceptor: Attach JWT token to every request ───

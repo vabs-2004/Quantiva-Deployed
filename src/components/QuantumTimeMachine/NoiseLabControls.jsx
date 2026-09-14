@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useCallback, useEffect } from "react";
+import { useQuantumContextLens } from "../../context/QuantumContextLensContext";
+import { extractNoiseLabContext } from "../QuantumContextLens/adapters/noiseLabEntityAdapter";
 
 const NOISE_MODELS = [
   {
@@ -43,9 +45,17 @@ export default function NoiseLabControls({
   isSimulating,
   activeNoiseConfig,
   divergenceSummary,
+  idealStep = null,
+  noisyStep = null,
+  stepIndex = 0,
+  totalSteps = 1,
+  selectedQubit = 0,
+  numQubits = 1,
 }) {
   const [selectedModel, setSelectedModel] = useState("depolarizing");
   const [strengthPct, setStrengthPct] = useState(15); // 15% default
+
+  const { isFeatureEnabled, openLens } = useQuantumContextLens();
 
   const currentModelInfo = NOISE_MODELS.find((m) => m.id === selectedModel) || NOISE_MODELS[0];
 
@@ -56,8 +66,62 @@ export default function NoiseLabControls({
     });
   };
 
+  const handleInspectModel = useCallback((e, modelId) => {
+    if (e) e.stopPropagation();
+    if (!isFeatureEnabled) return;
+
+    const targetModel = modelId || selectedModel;
+    const isModelCurrentlySimulated = activeNoiseConfig && activeNoiseConfig.noiseModel === targetModel;
+    const effectiveNoisyStep = isModelCurrentlySimulated ? noisyStep : null;
+    const effectiveDivergenceSummary = isModelCurrentlySimulated ? divergenceSummary : null;
+
+    const ctx = extractNoiseLabContext({
+      entityKey: targetModel,
+      entityType: "noise-model",
+      activeNoiseConfig: {
+        noiseModel: targetModel,
+        noiseStrength: isModelCurrentlySimulated ? activeNoiseConfig.noiseStrength : strengthPct / 100.0,
+      },
+      idealStep,
+      noisyStep: effectiveNoisyStep,
+      stepIndex,
+      totalSteps,
+      selectedQubit,
+      numQubits,
+      divergenceSummary: effectiveDivergenceSummary,
+    });
+
+    if (ctx && ctx.entity) {
+      openLens(ctx.entity, ctx);
+    }
+  }, [isFeatureEnabled, selectedModel, activeNoiseConfig, strengthPct, idealStep, noisyStep, stepIndex, totalSteps, selectedQubit, numQubits, divergenceSummary, openLens]);
+
+  // Keyboard shortcut (Alt + Q) to inspect currently selected model
+  useEffect(() => {
+    if (!isFeatureEnabled || !isOpen) return;
+
+    const handleKeyDown = (e) => {
+      if (e.altKey && (e.key === "q" || e.key === "Q")) {
+        const sel = typeof window !== "undefined" ? window.getSelection()?.toString().trim() : "";
+        if (sel) return;
+
+        const tag = document.activeElement?.tagName?.toLowerCase();
+        if ((tag === "input" && document.activeElement?.type === "text") || tag === "textarea") return;
+
+        e.preventDefault();
+        handleInspectModel(null, selectedModel);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isFeatureEnabled, isOpen, selectedModel, handleInspectModel]);
+
   return (
-    <div className="flex flex-col gap-3 rounded-2xl app-glass border border-amber-500/30 p-5 bg-gradient-to-br from-amber-500/5 via-[var(--color-app-surface)]/60 to-black/40 shadow-xl shadow-amber-500/5">
+    <div
+      data-lens-surface="noise-lab"
+      className="flex flex-col gap-3 rounded-2xl app-glass border border-amber-500/30 p-5 bg-gradient-to-br from-amber-500/5 via-[var(--color-app-surface)]/60 to-black/40 shadow-xl shadow-amber-500/5"
+    >
       {/* Header bar */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
@@ -69,9 +133,6 @@ export default function NoiseLabControls({
               <h3 className="text-sm font-bold text-[var(--color-app-text-main)]">
                 Noise Lab: Environmental Decoherence & Divergence
               </h3>
-              {/* <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/40">
-                Stage 6
-              </span> */}
             </div>
             <p className="text-xs text-[var(--color-app-text-muted)] mt-0.5">
               Inspect how physical and detector noise causes the physical state trajectory to depart from the ideal circuit.
@@ -82,15 +143,14 @@ export default function NoiseLabControls({
         {/* Right status & toggle */}
         <div className="flex items-center gap-2">
           {activeNoiseConfig && (
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-mono">
-              <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
-              <span>
-                Active: {activeNoiseConfig.noiseModel} ({(activeNoiseConfig.noiseStrength * 100).toFixed(0)}%)
+            <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/30 rounded-lg px-2.5 py-1">
+              <span className="text-xs text-amber-300 font-mono">
+                Active: <strong className="capitalize">{activeNoiseConfig.noiseModel}</strong> (
+                {Math.round(activeNoiseConfig.noiseStrength * 100)}%)
               </span>
               <button
                 onClick={onClearNoise}
-                className="ml-2 hover:text-white underline text-[11px]"
-                title="Reset to ideal timeline"
+                className="text-[11px] text-red-400 hover:text-red-300 font-bold ml-1 hover:underline cursor-pointer"
               >
                 Clear
               </button>
@@ -99,7 +159,7 @@ export default function NoiseLabControls({
 
           <button
             onClick={onToggle}
-            className="px-3 py-1.5 text-xs font-bold rounded-lg border border-[var(--color-app-border)] hover:bg-[var(--color-app-surface)] text-[var(--color-app-text-muted)] hover:text-[var(--color-app-text-main)] transition-colors flex items-center gap-1.5"
+            className="px-3 py-1.5 text-xs font-bold rounded-lg border border-[var(--color-app-border)] hover:bg-[var(--color-app-surface)] text-[var(--color-app-text-muted)] hover:text-[var(--color-app-text-main)] transition-colors flex items-center gap-1.5 cursor-pointer"
           >
             {isOpen ? "Hide Controls" : "Configure Noise"}
             <svg
@@ -122,10 +182,18 @@ export default function NoiseLabControls({
             {NOISE_MODELS.map((model) => {
               const isSelected = selectedModel === model.id;
               return (
-                <button
+                <div
                   key={model.id}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => setSelectedModel(model.id)}
-                  className={`flex flex-col p-3 rounded-xl text-left border transition-all ${
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setSelectedModel(model.id);
+                    }
+                  }}
+                  className={`flex flex-col p-3 rounded-xl text-left border cursor-pointer transition-all ${
                     isSelected
                       ? "bg-amber-500/20 border-amber-400 text-white shadow-md shadow-amber-500/10"
                       : "bg-[var(--color-app-surface)]/40 border-[var(--color-app-border)] text-[var(--color-app-text-muted)] hover:border-amber-500/40 hover:text-[var(--color-app-text-main)]"
@@ -133,20 +201,35 @@ export default function NoiseLabControls({
                 >
                   <div className="flex items-center justify-between w-full mb-1">
                     <span className="font-bold text-xs">{model.name}</span>
-                    <span
-                      className={`text-[9px] px-1.5 py-0.2 rounded font-mono ${
-                        model.id === "readout"
-                          ? "bg-blue-500/20 text-blue-300"
-                          : "bg-amber-500/20 text-amber-300"
-                      }`}
-                    >
-                      {model.target}
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span
+                        className={`text-[9px] px-1.5 py-0.2 rounded font-mono ${
+                          model.id === "readout"
+                            ? "bg-blue-500/20 text-blue-300"
+                            : "bg-amber-500/20 text-amber-300"
+                        }`}
+                      >
+                        {model.target}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={(e) => handleInspectModel(e, model.id)}
+                        className={`p-1 rounded text-xs transition-colors cursor-pointer ${
+                          isSelected
+                            ? "hover:bg-amber-400/20 text-amber-300 hover:text-white"
+                            : "opacity-60 hover:opacity-100 hover:bg-amber-500/20 text-amber-300"
+                        }`}
+                        title={`Inspect ${model.name} in Context Lens (Alt+Q)`}
+                        aria-label={`Inspect ${model.name}`}
+                      >
+                        🔍
+                      </button>
+                    </div>
                   </div>
                   <p className="text-[11px] leading-tight text-[var(--color-app-text-muted)] mt-1">
                     {model.description}
                   </p>
-                </button>
+                </div>
               );
             })}
           </div>

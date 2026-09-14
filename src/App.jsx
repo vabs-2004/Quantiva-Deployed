@@ -8,6 +8,9 @@ import useSmoothScroll from "./hooks/useSmoothScroll";
 import usePageTracking from "./hooks/usePageTracking";
 
 import AITutorPanel from "./components/AITutor/AITutorPanel";
+import { QuantumContextLensProvider } from "./context/QuantumContextLensContext";
+import QuantumContextLensDrawer from "./components/QuantumContextLens/QuantumContextLensDrawer";
+import SelectionLensTrigger from "./components/QuantumContextLens/SelectionLensTrigger";
 
 /**
  * Inner app component that uses the smooth scroll hook.
@@ -20,6 +23,8 @@ function AppInner() {
     <>
       <AppRoutes />
       <AITutorPanel />
+      <SelectionLensTrigger />
+      <QuantumContextLensDrawer />
     </>
   );
 }
@@ -40,7 +45,9 @@ function App() {
           <AuthProvider>
             <AlgorithmProvider>
               <AITutorProvider>
-                <AppInner />
+                <QuantumContextLensProvider>
+                  <AppInner />
+                </QuantumContextLensProvider>
               </AITutorProvider>
             </AlgorithmProvider>
           </AuthProvider>

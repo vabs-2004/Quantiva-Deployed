@@ -2,16 +2,21 @@ import React, { useState } from "react";
 import { explainNoiseDivergence } from "../../services/api";
 import MathHTMLContainer from "../MathHTMLContainer/MathHTMLContainer";
 import { marked } from "marked";
+import { useQuantumContextLens } from "../../context/QuantumContextLensContext";
+import { extractNoiseLabContext } from "../QuantumContextLens/adapters/noiseLabEntityAdapter";
 
 export default function NoiseDivergencePanel({
   noisyStep,
   idealStep,
   stepIndex,
+  totalSteps = 1,
   timelineId,
   noisyTimelineId,
   divergenceSummary,
   noiseModel,
   noiseStrength,
+  selectedQubit = 0,
+  numQubits = 1,
 }) {
   const [explanationCache, setExplanationCache] = useState({});
   const [isLoadingAI, setIsLoadingAI] = useState(false);
@@ -19,6 +24,51 @@ export default function NoiseDivergencePanel({
   const [userQuestion, setUserQuestion] = useState("");
   const [showQuestionInput, setShowQuestionInput] = useState(false);
   const [isExpanded, setIsExpanded] = useState(true);
+
+  const { isFeatureEnabled, openLens } = useQuantumContextLens();
+
+  const handleInspectMetric = React.useCallback((e, metricKey) => {
+    if (e) e.stopPropagation();
+    if (!isFeatureEnabled) return;
+
+    const ctx = extractNoiseLabContext({
+      entityKey: metricKey,
+      entityType: "noise-metric",
+      activeNoiseConfig: { noiseModel, noiseStrength },
+      idealStep,
+      noisyStep,
+      stepIndex,
+      totalSteps,
+      selectedQubit,
+      numQubits,
+      divergenceSummary,
+    });
+
+    if (ctx && ctx.entity) {
+      openLens(ctx.entity, ctx);
+    }
+  }, [isFeatureEnabled, noiseModel, noiseStrength, idealStep, noisyStep, stepIndex, totalSteps, selectedQubit, numQubits, divergenceSummary, openLens]);
+
+  // Keyboard shortcut (Alt + Q) to inspect primary metric (State Fidelity) when panel is expanded
+  React.useEffect(() => {
+    if (!isFeatureEnabled || !isExpanded) return;
+
+    const handleKeyDown = (e) => {
+      if (e.altKey && (e.key === "q" || e.key === "Q")) {
+        const sel = typeof window !== "undefined" ? window.getSelection()?.toString().trim() : "";
+        if (sel) return;
+
+        const tag = document.activeElement?.tagName?.toLowerCase();
+        if ((tag === "input" && document.activeElement?.type === "text") || tag === "textarea") return;
+
+        e.preventDefault();
+        handleInspectMetric(null, "fidelity");
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isFeatureEnabled, isExpanded, handleInspectMetric]);
 
   if (!noisyStep) return null;
 
@@ -111,10 +161,11 @@ export default function NoiseDivergencePanel({
           <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
 
           <div>
-            <h4 className="text-xs font-extrabold uppercase tracking-wider text-amber-300">
-              Noise Lab: Cross-Sectional Divergence (Step{" "}
-              {stepIndex})
-            </h4>
+            <div className="flex items-center gap-1.5">
+              <h4 className="text-xs font-extrabold uppercase tracking-wider text-amber-300">
+                Noise Lab: Cross-Sectional Divergence (Step {stepIndex})
+              </h4>
+            </div>
 
             <p className="text-[11px] text-[var(--color-app-text-muted)]">
               Contrasting physical noisy density matrix ρₖ
@@ -125,7 +176,7 @@ export default function NoiseDivergencePanel({
 
         <button
           onClick={() => setIsExpanded(!isExpanded)}
-          className="text-xs font-mono text-[var(--color-app-text-muted)] hover:text-white"
+          className="text-xs font-mono text-[var(--color-app-text-muted)] hover:text-white cursor-pointer"
         >
           {isExpanded ? "Collapse" : "Expand"}
         </button>
@@ -137,9 +188,20 @@ export default function NoiseDivergencePanel({
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
             {/* 1. Fidelity */}
             <div className="p-3 rounded-xl bg-black/40 border border-[var(--color-app-border)] flex flex-col items-center">
-              <span className="text-[10px] uppercase font-bold text-[var(--color-app-text-muted)]">
-                State Fidelity F
-              </span>
+              <div className="flex items-center justify-between w-full">
+                <span className="text-[10px] uppercase font-bold text-[var(--color-app-text-muted)]">
+                  State Fidelity F
+                </span>
+                <button
+                  type="button"
+                  onClick={(e) => handleInspectMetric(e, "fidelity")}
+                  className="p-1 rounded hover:bg-amber-500/20 text-amber-300/80 hover:text-white transition-colors text-xs cursor-pointer"
+                  title="Inspect State Fidelity in Context Lens (Alt+Q)"
+                  aria-label="Inspect State Fidelity"
+                >
+                  🔍
+                </button>
+              </div>
 
               <span
                 className={`text-base font-extrabold font-mono mt-1 ${
@@ -160,9 +222,20 @@ export default function NoiseDivergencePanel({
 
             {/* 2. Cumulative Divergence */}
             <div className="p-3 rounded-xl bg-black/40 border border-[var(--color-app-border)] flex flex-col items-center">
-              <span className="text-[10px] uppercase font-bold text-[var(--color-app-text-muted)]">
-                State Divergence D
-              </span>
+              <div className="flex items-center justify-between w-full">
+                <span className="text-[10px] uppercase font-bold text-[var(--color-app-text-muted)]">
+                  State Divergence D
+                </span>
+                <button
+                  type="button"
+                  onClick={(e) => handleInspectMetric(e, "divergence")}
+                  className="p-1 rounded hover:bg-amber-500/20 text-amber-300/80 hover:text-white transition-colors text-xs cursor-pointer"
+                  title="Inspect State Divergence in Context Lens (Alt+Q)"
+                  aria-label="Inspect State Divergence"
+                >
+                  🔍
+                </button>
+              </div>
 
               <span
                 className={`text-base font-extrabold font-mono mt-1 ${
@@ -183,9 +256,20 @@ export default function NoiseDivergencePanel({
 
             {/* 3. Purity Delta */}
             <div className="p-3 rounded-xl bg-black/40 border border-[var(--color-app-border)] flex flex-col items-center">
-              <span className="text-[10px] uppercase font-bold text-[var(--color-app-text-muted)]">
-                Purity Delta Δγ
-              </span>
+              <div className="flex items-center justify-between w-full">
+                <span className="text-[10px] uppercase font-bold text-[var(--color-app-text-muted)]">
+                  Purity Delta Δγ
+                </span>
+                <button
+                  type="button"
+                  onClick={(e) => handleInspectMetric(e, "purityDelta")}
+                  className="p-1 rounded hover:bg-amber-500/20 text-amber-300/80 hover:text-white transition-colors text-xs cursor-pointer"
+                  title="Inspect Purity Delta in Context Lens (Alt+Q)"
+                  aria-label="Inspect Purity Delta"
+                >
+                  🔍
+                </button>
+              </div>
 
               <span
                 className={`text-base font-extrabold font-mono mt-1 ${
@@ -206,9 +290,20 @@ export default function NoiseDivergencePanel({
 
             {/* 4. Max Bloch Distance */}
             <div className="p-3 rounded-xl bg-black/40 border border-[var(--color-app-border)] flex flex-col items-center">
-              <span className="text-[10px] uppercase font-bold text-[var(--color-app-text-muted)]">
-                Max Bloch Distance
-              </span>
+              <div className="flex items-center justify-between w-full">
+                <span className="text-[10px] uppercase font-bold text-[var(--color-app-text-muted)]">
+                  Max Bloch Distance
+                </span>
+                <button
+                  type="button"
+                  onClick={(e) => handleInspectMetric(e, "bloch")}
+                  className="p-1 rounded hover:bg-amber-500/20 text-amber-300/80 hover:text-white transition-colors text-xs cursor-pointer"
+                  title="Inspect Max Bloch Distance in Context Lens (Alt+Q)"
+                  aria-label="Inspect Max Bloch Distance"
+                >
+                  🔍
+                </button>
+              </div>
 
               <span
                 className={`text-base font-extrabold font-mono mt-1 ${

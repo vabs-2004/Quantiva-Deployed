@@ -119,7 +119,13 @@ export default function AlgorithmPage() {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto bg-[var(--color-app-base)] relative" data-lenis-prevent="true">
+    <div
+      className="flex-1 overflow-y-auto bg-[var(--color-app-base)] relative"
+      data-lenis-prevent="true"
+      data-lens-surface="algorithm"
+      data-lens-algorithm-id={selectedAlgorithm.id}
+      data-lens-algorithm-name={selectedAlgorithm.name}
+    >
       <Loading visible={loading} />
 
       {/* Toast Notification */}

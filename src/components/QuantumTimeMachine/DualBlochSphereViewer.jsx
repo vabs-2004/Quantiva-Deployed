@@ -2,6 +2,8 @@ import React from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import BlochSphere3D from "../BlochSphereViewer/BlochSphere3D";
+import { useQuantumContextLens } from "../../context/QuantumContextLensContext";
+import { extractNoiseLabContext } from "../QuantumContextLens/adapters/noiseLabEntityAdapter";
 
 export default function DualBlochSphereViewer({
   idealBlochVectors = [],
@@ -9,11 +11,41 @@ export default function DualBlochSphereViewer({
   selectedQubit = 0,
   onSelectQubit,
   numQubits = 1,
+  idealStep = null,
+  noisyStep = null,
+  stepIndex = 0,
+  totalSteps = 1,
+  activeNoiseConfig = null,
+  divergenceSummary = null,
 }) {
   const safeQubit = Math.min(
     selectedQubit,
     Math.max(0, Math.min(idealBlochVectors.length - 1, noisyBlochVectors.length - 1))
   );
+
+  const { isFeatureEnabled, openLens } = useQuantumContextLens();
+
+  const handleInspectSubsystem = (e) => {
+    e.stopPropagation();
+    if (!isFeatureEnabled) return;
+
+    const ctx = extractNoiseLabContext({
+      entityKey: "bloch-subsystem",
+      entityType: "bloch-subsystem",
+      activeNoiseConfig,
+      idealStep,
+      noisyStep,
+      stepIndex,
+      totalSteps,
+      selectedQubit: safeQubit,
+      numQubits,
+      divergenceSummary,
+    });
+
+    if (ctx && ctx.entity) {
+      openLens(ctx.entity, ctx);
+    }
+  };
 
   const idealBv = idealBlochVectors[safeQubit] || {
     x: 0, y: 0, z: 1, r: 1, theta: 0, phi: 0, purity: 1, isEntangled: false,
@@ -30,10 +62,21 @@ export default function DualBlochSphereViewer({
       {/* Header and Qubit Selector */}
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--color-app-border)] pb-3">
         <div>
-          <h3 className="text-xs font-bold uppercase tracking-wider text-amber-300 flex items-center gap-2">
-            <span>🌐</span>
-            <span>Comparative Subsystem Bloch Spheres</span>
-          </h3>
+          <div className="flex items-center gap-1.5">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-amber-300 flex items-center gap-2">
+              <span>🌐</span>
+              <span>Comparative Subsystem Bloch Spheres</span>
+            </h3>
+            <button
+              type="button"
+              onClick={handleInspectSubsystem}
+              className="p-1 rounded hover:bg-amber-500/20 text-amber-300 hover:text-white transition-colors text-xs"
+              title="Inspect Subsystem Mixed State in Context Lens (Alt+Q)"
+              aria-label="Inspect Subsystem State"
+            >
+              🔍
+            </button>
+          </div>
           <p className="text-[11px] text-[var(--color-app-text-muted)]">
             Left: Ideal pure state on sphere surface vs. Right: Mixed noisy state inside sphere.
           </p>

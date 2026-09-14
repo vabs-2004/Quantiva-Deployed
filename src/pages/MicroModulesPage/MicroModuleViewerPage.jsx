@@ -192,7 +192,10 @@ export default function MicroModuleViewerPage() {
   const nextModule = currentIndex >= 0 && currentIndex < allModules.length - 1 ? allModules[currentIndex + 1] : null;
 
   return (
-    <div className="min-h-screen pt-20 pb-16 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
+    <div
+      data-lens-surface="micro-module"
+      className="min-h-screen pt-20 pb-16 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto"
+    >
       {/* Toast Notification */}
       {toastInfo && (
         <motion.div

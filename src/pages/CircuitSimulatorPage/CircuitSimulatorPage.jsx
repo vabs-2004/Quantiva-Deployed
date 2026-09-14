@@ -22,6 +22,7 @@ import {
   getCircuitLayers,
   flattenCircuitByLayer,
 } from "../../utils/circuitLayers";
+import CircuitLensTrigger from "../../components/QuantumContextLens/CircuitLensTrigger";
 
 const GATES = [
   {
@@ -343,6 +344,8 @@ function WireDroppable({
   numQubits,
   activeGateIndex,
   activeLayerIndex,
+  selectedGate,
+  onSelectGate,
 }) {
   const { isOver, setNodeRef } = useDroppable({
     id: `wire-${wireIndex}`,
@@ -375,16 +378,27 @@ function WireDroppable({
               activeLayerIndex !== null &&
               activeLayerIndex !== undefined &&
               activeLayerIndex === i;
+            const isLensSelected =
+              selectedGate?.wireIndex === wireIndex &&
+              selectedGate?.gateIndex === i;
             return (
               <div
                 key={i}
-                className={`h-12 w-16 shrink-0 flex flex-col items-center justify-center rounded-lg border-2 hover:brightness-110 transition-all relative group/gate ${g.color} ${
-                  isActive
-                    ? "ring-4 ring-[var(--color-app-primary)] border-[var(--color-app-primary)] shadow-xl shadow-[var(--color-app-primary)]/50 scale-110 z-30 animate-pulse"
-                    : isLayerActive
-                      ? "ring-2 ring-cyan-400/60 border-cyan-400 shadow-md shadow-cyan-500/20"
-                      : ""
+                onClick={(e) => {
+                  if (typeof onSelectGate === "function") {
+                    onSelectGate({ wireIndex, gateIndex: i, gate: g });
+                  }
+                }}
+                className={`h-12 w-16 shrink-0 flex flex-col items-center justify-center rounded-lg border-2 hover:brightness-110 transition-all relative group/gate cursor-pointer ${g.color} ${
+                  isLensSelected
+                    ? "ring-4 ring-indigo-400 border-indigo-300 shadow-xl shadow-indigo-500/40 scale-105 z-25"
+                    : isActive
+                      ? "ring-4 ring-[var(--color-app-primary)] border-[var(--color-app-primary)] shadow-xl shadow-[var(--color-app-primary)]/50 scale-110 z-30 animate-pulse"
+                      : isLayerActive
+                        ? "ring-2 ring-cyan-400/60 border-cyan-400 shadow-md shadow-cyan-500/20"
+                        : ""
                 }`}
+                title="Click to select • Alt+Q for Context Lens"
               >
                 <div
                   className="absolute top-0 right-0 -mt-2 -mr-2 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] opacity-0 group-hover/gate:opacity-100 cursor-pointer z-20"
@@ -392,6 +406,7 @@ function WireDroppable({
                     e.stopPropagation();
                     onRemove(wireIndex, i);
                   }}
+                  title="Remove gate"
                 >
                   ✕
                 </div>
@@ -404,6 +419,7 @@ function WireDroppable({
                         ? g.target
                         : (wireIndex + 1) % numQubits
                     }
+                    onClick={(e) => e.stopPropagation()}
                     onChange={(e) =>
                       onUpdate(wireIndex, i, {
                         ...g,
@@ -466,6 +482,7 @@ export default function CircuitSimulatorPage() {
   const [qasmError, setQasmError] = useState(null);
   const [stateProbs, setStateProbs] = useState(null);
   const [expandedSimulationImage, setExpandedSimulationImage] = useState(null);
+  const [selectedGate, setSelectedGate] = useState(null); // { wireIndex, gateIndex, gate } | null
 
   // ─── Quantum Time Machine State ───
   const [timeline, setTimeline] = useState(null);
@@ -520,6 +537,12 @@ export default function CircuitSimulatorPage() {
   };
 
   const removeGate = (wireIndex, gateIndex) => {
+    setSelectedGate((prev) => {
+      if (prev?.wireIndex === wireIndex && prev?.gateIndex === gateIndex) {
+        return null;
+      }
+      return prev;
+    });
     setCircuit((prev) => {
       const newWire = [...prev[wireIndex]];
       newWire.splice(gateIndex, 1);
@@ -567,6 +590,7 @@ export default function CircuitSimulatorPage() {
     setTimelineStale(false);
     setIsPlaying(false);
     setCurrentStepIndex(0);
+    setSelectedGate(null);
   };
 
   // Flatten circuit representation for Time Machine evaluation (canonical time-major layer ordering)
@@ -754,7 +778,10 @@ export default function CircuitSimulatorPage() {
   };
 
   return (
-    <div className="flex h-[calc(100vh-60px)] w-full flex-col bg-[var(--color-app-base)] text-[var(--color-app-text-main)]">
+    <div
+      data-lens-surface="circuit-simulator"
+      className="flex h-[calc(100vh-60px)] w-full flex-col bg-[var(--color-app-base)] text-[var(--color-app-text-main)]"
+    >
       {/* Header */}
       <div className="flex items-center justify-between bg-[var(--color-app-surface)] px-8 py-4 border-b border-[var(--color-app-border)]">
         <div>
@@ -907,6 +934,8 @@ export default function CircuitSimulatorPage() {
                       : null
                   }
                   activeLayerIndex={activeGateInfo?.layerIndex}
+                  selectedGate={selectedGate}
+                  onSelectGate={setSelectedGate}
                 />
               ))}
             </div>
@@ -1011,16 +1040,18 @@ export default function CircuitSimulatorPage() {
                   <button
                     onClick={() =>
                       openTutor(
-                        "Review my circuit — point out bugs and optimizations.",
-                        {
-                          page: "Circuit Simulator",
-                          code: outputPython,
-                          numQubits,
-                          gates: flattenCircuitByLayer(numQubits, circuit),
-                          layers: getCircuitLayers(numQubits, circuit),
-                          probabilities: stateProbs || {},
-                        },
-                      )
+  "Review my circuit — point out bugs and optimizations.",
+  {
+    source: "circuit-simulator",
+    page: "Circuit Simulator",
+    circuit: circuit,
+    code: outputPython,
+    numQubits,
+    gates: flattenCircuitByLayer(numQubits, circuit),
+    layers: getCircuitLayers(numQubits, circuit),
+    probabilities: stateProbs || {},
+  },
+)
                     }
                     className="ml-auto text-[10px] normal-case tracking-normal font-semibold px-2.5 py-1 rounded-full transition-colors"
                     style={{
@@ -1206,6 +1237,14 @@ export default function CircuitSimulatorPage() {
           onClose={() => setExpandedSimulationImage(null)}
         />
       )}
+
+      {/* Quantum Context Lens Trigger for Interactive Circuit Objects */}
+      <CircuitLensTrigger
+        selectedGate={selectedGate}
+        circuit={circuit}
+        numQubits={numQubits}
+        onClear={() => setSelectedGate(null)}
+      />
     </div>
   );
 }
