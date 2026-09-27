@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://quantum-sim-lab.vercel.app/sitemap.xml
