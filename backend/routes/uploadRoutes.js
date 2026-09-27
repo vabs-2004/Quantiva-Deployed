@@ -23,7 +23,7 @@ if (IS_PRODUCTION && process.env.CLOUDINARY_CLOUD_NAME) {
   const cloudStorage = new CloudinaryStorage({
     cloudinary: cloudinary,
     params: {
-      folder: "quantum-sim-lab",
+      folder: "Quantiva-Deployed",
       allowed_formats: ["jpg", "jpeg", "png", "gif", "webp", "svg"],
       transformation: [{ quality: "auto", fetch_format: "auto" }],
     },

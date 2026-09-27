@@ -159,7 +159,7 @@ export default function LandingPage() {
           <div className="landing-hero-text">
             <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0} className="landing-badge">
               <span className="landing-badge-dot" />
-              Team GitHappens
+              Team GitHappens2
             </motion.div>
 
             <motion.h1 variants={fadeUp} initial="hidden" animate="visible" custom={1} className="landing-title">

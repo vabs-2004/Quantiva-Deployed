@@ -6,7 +6,7 @@ export const APP_TAGLINE = "Quantum Algorithm Research Platform";
 export const APP_DESCRIPTION =
   "An interactive platform for quantum algorithm research, simulation, and experimentation using Qiskit.";
 
-export const APP_ORG = "GitHappens";
+export const APP_ORG = "GitHappens2";
 export const APP_ORG_SHORT = "GH";
 
 /**

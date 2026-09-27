@@ -106,7 +106,7 @@ export default function Footer() {
            SIH26140
         </p>
         <p className="footer-bottom-sub" style={{ marginTop: "0.25rem", fontWeight: 600, color: "var(--color-app-primary)" }}>
-          Designed & Developed by Team GitHappens
+          Designed & Developed by Team GitHappens2
         </p>
       </div>
     </footer>

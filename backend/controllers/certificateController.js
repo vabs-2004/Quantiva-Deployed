@@ -208,7 +208,7 @@ function drawCertificate(doc, certificate) {
   doc.fillColor(MUTED).font("Helvetica").fontSize(9).text("Instructor", width - margin - 250, footerY + 16, { width: 180, align: "center" });
 
   // Certificate ID footer
-  const frontendUrl = process.env.FRONTEND_URL || "https://quantum-sim-lab.vercel.app";
+  const frontendUrl = process.env.FRONTEND_URL || "https://quantiva-deployed.vercel.app/";
   doc
     .fillColor(MUTED)
     .font("Helvetica")

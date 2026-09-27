@@ -54,7 +54,7 @@ export default function Navbar() {
             <div className="nav-brand-name">{APP_NAME}</div>
             <div className="nav-brand-org">
               <span className="hidden md:inline">{APP_ORG}</span>
-              <span className="md:hidden">GitHappens</span>
+              <span className="md:hidden">GitHappens2</span>
             </div>
           </div>
         </Link>

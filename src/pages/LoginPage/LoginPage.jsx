@@ -103,7 +103,7 @@ export default function LoginPage({ defaultRegister = false }) {
             Quantiva
           </h1>
           <p className="text-sm mt-1" style={{ color: "var(--color-app-text-muted)" }}>
-            GitHappens (GitHappens)
+            GitHappens2 (GitHappens2)
           </p>
         </motion.div>
 
@@ -401,7 +401,7 @@ export default function LoginPage({ defaultRegister = false }) {
         </div>
 
         <p className="text-center text-xs mt-6" style={{ color: "var(--color-app-text-light)" }}>
-          GitHappens
+          GitHappens2
         </p>
       </motion.div>
     </div>
